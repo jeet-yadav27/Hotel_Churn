@@ -1,0 +1,20 @@
+venv/
+mlruns/
+logs/
+PROJECT CODE.egg-info/"*.json" 
+"sa.json" 
+
+
+# Ignore service account keys and other secrets
+*.json
+!config.json  # (optional: allow specific config files if needed)
+
+# Ignore Python environment folders
+venv/
+__pycache__/
+*.pyc
+
+# Ignore logs and artifacts
+*.log
+artifacts/
+logs/

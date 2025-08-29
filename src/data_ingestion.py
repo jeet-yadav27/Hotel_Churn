@@ -42,15 +42,20 @@ class DataIngestion:
                 raise FileNotFoundError(f"Raw file not found at {os.path.abspath(RAW_FILE_PATH)}")
 
             data = pd.read_csv(RAW_FILE_PATH)
-            train_data, test_data = train_test_split(
-                data, test_size=1 - self.train_test_ratio, random_state=42
-            )
-     
+            from sklearn.model_selection import train_test_split
+            import os
             
-            # Make sure the directory exists
+            # Ensure the output directory exists
             os.makedirs("artifacts/raw", exist_ok=True)
             
-            # Save directly without using TRAIN_FILE_PATH / TEST_FILE_PATH
+            # Split into 70% train, 30% test
+            train_data, test_data = train_test_split(
+                data,                # your DataFrame
+                test_size=0.3,        # 30% test set
+                random_state=42       # reproducible split
+            )
+            
+            # Save directly without constants
             train_data.to_csv("artifacts/raw/train.csv", index=False)
             test_data.to_csv("artifacts/raw/test.csv", index=False)
                         

@@ -1,53 +1,80 @@
-C:\Users\jeety\Desktop\2. MLOPS_DEVOPS\hote_churn\learned-cosine-468917-e9-4cc62a2186e8.json
+# Hotel Churn Prediction 🚀
 
+A Machine Learning project to predict hotel reservation cancellations. The project uses Python, LightGBM, Flask, and can be deployed on **Google Cloud Run** via **Docker** and **Jenkins CI/CD**.
+
+---
+
+## Features
+
+- Data ingestion from **Google Cloud Storage**
+- Data preprocessing:
+  - Label encoding
+  - Handling skewness
+  - Feature selection using Random Forest
+  - Balancing dataset using SMOTE
+- LightGBM model training
+- Flask web app for real-time prediction
+- Containerized using **Docker**
+- Deployment to **Google Cloud Run**
+- Automated pipeline using **Jenkins**
+
+---
+
+## Project Structure
+
+Hotel_Churn/
+├── application.py # Flask app
+├── pipeline/
+│ └── training_pipeline.py # Data ingestion + preprocessing + model training
+├── src/
+│ ├── data_ingestion.py # Download CSV & split data
+│ ├── data_processor.py # Data preprocessing & feature selection
+│ ├── custom_exception.py
+│ └── logger.py
+├── config/
+│ └── config.yaml # Configuration file
+├── artifacts/ # Raw/processed data, models
+├── Dockerfile # Docker setup
+├── Jenkinsfile # Jenkins CI/CD pipeline
+└── templates/
+└── index.html # Flask frontend
+
+
+
+---
+
+## Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/jeet-yadav27/Hotel_Churn.git
+cd Hotel_Churn
+
+
+2. Create a virtual environment and install dependencies:
+
+python -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
 pip install -e .
-python -m src.data_preprocessing
 
 
-### steps for CI/CD DEPLOYMENT
-1. Setup Jenkins Container 
-NOTE (DID) Docker in Docker 
-    first Docker is for the Jenkins and Second docker is for the project running
-
-2. Github Integration
-we have to intergrate the github code to the jenkins pipeline
-
-3. Dockerization of project
-
-4. Create a Virtual Env in your jenkins Pipeline
-
-5. Build Docker Image of the Project-->>>> then push this image to GCR (Google Cloud Registry)
-
-6. Extract image from GCR and push to Google Cloud Run--->>> then App is Deployed
+3. Add your GCP service account key (for data ingestion):
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/gcp-key.json"
 
 
-NOTE: open the Docker Desktop and keep the Running the app in background and see if the Engine is running 
+Configuration
+
+Edit config/config.yaml to update:
+
+GCP bucket name and file path
+
+Train/test split ratio
+
+Columns for preprocessing
 
 
-prcatical
-1. Create the Directory name  --->>> custom_jenkins, insdie this create a ---->>> Dockerfile
+Running Locally
 
-2. After paste the Docker code form stepmd. login Docker >>> docker login
-3. build the image of jenkins Docker >> docker Build -t jenkins-dind . ### here jenkins-dind . is the Docker name
-4. now check if the image is successfully build or not, for this ---->>> docker images
-5. Go to setupmd.-->> 4. **Run Jenkins Docker Container:** copy and paste this code
-
-    docker run -d --name jenkins-dind ^
-    --privileged ^
-    -p 8080:8080 -p 50000:50000 ^
-    -v //var/run/docker.sock:/var/run/docker.sock ^
-    -v jenkins_home:/var/jenkins_home ^
-    jenkins-dind
-
-    After running the code, will get alpha numeric key value>> check same on  docker or you can run-->>> docker ps
-
-6. now> ------ docker logs jenkins-dind
-
-copy the password >>> goto browser search localhost: 8080>>>> Enter the password>>> install the Plugin
-user_name>> mlops92
-password>> jenkins
-
-7. Download some dependencies for the jenkins
-go to steps.md code ### **Step 4: Install Python and Required Packages in Jenkins Container**
-
-### till jenkins done
+1. Run the training pipeline:

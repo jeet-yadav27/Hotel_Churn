@@ -1,30 +1,28 @@
-# Use a lightweight Python image
+# Use lightweight Python
 FROM python:3.10-slim
 
-# Prevent Python from writing .pyc files & Ensure output is not buffered
+# Avoid .pyc files, unbuffer output
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies (required by LightGBM)
+# System dependencies for LightGBM
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first (for better caching)
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the app code
-COPY . .
-
-# Ensure trained model is copied (adjust path if needed)
+# Copy package and setup files
+COPY setup.py setup.py
+COPY src/ src/
 COPY artifacts/models/lgbm_model.pkl artifacts/models/lgbm_model.pkl
+
+# Install your package in editable mode
+RUN pip install --no-cache-dir -e .
+
+# Copy Flask app
+COPY application.py .
 
 # Expose Cloud Run port
 EXPOSE 8080

@@ -38,19 +38,28 @@ class DataIngestion:
     def split_data(self):
         try:
             logger.info("Starting the splitting process")
+            if not os.path.exists(RAW_FILE_PATH):
+                raise FileNotFoundError(f"Raw file not found at {os.path.abspath(RAW_FILE_PATH)}")
+
             data = pd.read_csv(RAW_FILE_PATH)
-            train_data , test_data = train_test_split(data , test_size=1-self.train_test_ratio , random_state=42)
+            train_data, test_data = train_test_split(
+                data, test_size=1 - self.train_test_ratio, random_state=42
+            )
 
-            train_data.to_csv(TRAIN_FILE_PATH)
-            test_data.to_csv(TEST_FILE_PATH)
+            os.makedirs(os.path.dirname(TRAIN_FILE_PATH), exist_ok=True)
+            os.makedirs(os.path.dirname(TEST_FILE_PATH), exist_ok=True)
 
-            logger.info(f"Train data saved to {TRAIN_FILE_PATH}")
-            logger.info(f"Test data saved to {TEST_FILE_PATH}")
-        
+            train_data.to_csv(TRAIN_FILE_PATH, index=False)
+            test_data.to_csv(TEST_FILE_PATH, index=False)
+
+            logger.info(f"Train data saved to {os.path.abspath(TRAIN_FILE_PATH)}")
+            logger.info(f"Test data saved to {os.path.abspath(TEST_FILE_PATH)}")
+
         except Exception as e:
             logger.error("Error while splitting data")
-            raise CustomException("Failed to split data into training and test sets ", e)
-        
+            import sys
+            raise CustomException("Failed to split data into training and test sets", sys)
+            
     def run(self):
 
         try:

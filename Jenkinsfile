@@ -7,11 +7,12 @@ pipeline {
         GCLOUD_PATH = '/var/jenkins_home/google-cloud-sdk/bin'
         IMAGE_NAME = 'ml-project'
         IMAGE_TAG = 'latest'
-        REGION = 'us-central1'          // ✅ set your region
-        SERVICE_NAME = 'hotel-churn'    // ✅ Cloud Run service name
+        CLOUD_RUN_SERVICE = 'hotel-churn'
+        CLOUD_RUN_REGION = 'us-central1'
     }
 
     stages {
+
         stage('Clone GitHub Repo') {
             steps {
                 echo '🔄 Cloning GitHub repository...'
@@ -37,6 +38,16 @@ pipeline {
             }
         }
 
+        stage('Train Model') {
+            steps {
+                echo '🏋️‍♂️ Training model...'
+                sh '''
+                    . ${VENV_DIR}/bin/activate
+                    python pipeline/training_pipeline.py
+                '''
+            }
+        }
+
         stage('Build & Push Docker Image to GCR') {
             steps {
                 withCredentials([file(credentialsId: 'gcp-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
@@ -57,17 +68,17 @@ pipeline {
         stage('Deploy to Cloud Run') {
             steps {
                 withCredentials([file(credentialsId: 'gcp-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
-                    echo '🚀 Deploying to Google Cloud Run...'
+                    echo '🚀 Deploying to Cloud Run...'
                     sh '''
                         export PATH=$PATH:${GCLOUD_PATH}
                         gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
                         gcloud config set project ${GCP_PROJECT}
 
-                        gcloud run deploy ${SERVICE_NAME} \
+                        gcloud run deploy ${CLOUD_RUN_SERVICE} \
                             --image gcr.io/${GCP_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} \
                             --platform managed \
-                            --region ${REGION} \
-                            --allow-unauthenticated
+                            --region ${CLOUD_RUN_REGION} \
+                            --allow-unauthenticated \
                             --port 8080
                     '''
                 }
@@ -77,7 +88,7 @@ pipeline {
 
     post {
         success {
-            echo '✅ Pipeline completed and deployed successfully to Cloud Run!'
+            echo '✅ Pipeline completed successfully!'
         }
         failure {
             echo '❌ Pipeline failed. Check logs for details.'

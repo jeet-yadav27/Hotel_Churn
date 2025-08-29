@@ -40,11 +40,13 @@ pipeline {
 
         stage('Train Model') {
             steps {
-                echo '🏋️‍♂️ Training model...'
-                sh '''
-                    . ${VENV_DIR}/bin/activate
-                    python pipeline/training_pipeline.py
-                '''
+                withCredentials([file(credentialsId: 'gcp-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    sh '''
+                        export GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+                        . ${VENV_DIR}/bin/activate
+                        python pipeline/training_pipeline.py
+                    '''
+                }
             }
         }
 

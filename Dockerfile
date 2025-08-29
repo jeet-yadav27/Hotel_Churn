@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir -e .
 # Train the model before running the application
 # RUN python pipeline/training_pipeline.py
 # Remove this line from Dockerfile
-RUN python pipeline/training_pipeline.py 2>&1
+# RUN python pipeline/training_pipeline.py 2>&1
 
 
 

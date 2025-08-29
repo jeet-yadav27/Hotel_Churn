@@ -2,91 +2,63 @@ pipeline {
     agent any
 
     environment {
-        VENV_DIR    = 'venv'
-        GCP_PROJECT = "learned-cosine-468917-e9"
-        PATH        = "/var/jenkins_home/google-cloud-sdk/bin:${env.PATH}"
-        BUCKET_NAME = "jeet_yadav27"
-        DATA_FILE   = "Hotel_Reservations.csv"
+        VENV_DIR = 'venv'
+        GCP_PROJECT = 'learned-cosine-468917-e9'
+        GCLOUD_PATH = '/var/jenkins_home/google-cloud-sdk/bin'
+        IMAGE_NAME = 'ml-project'
+        IMAGE_TAG = 'latest'
     }
 
     stages {
-
-        stage('Clone GitHub repo') {
+        stage('Clone GitHub Repo') {
             steps {
+                echo '🔄 Cloning GitHub repository...'
                 checkout scmGit(
                     branches: [[name: '*/main']],
                     userRemoteConfigs: [[
-                        credentialsId: 'github-token',
-                        url: 'https://github.com/jeet-yadav27/Hotel_Churn.git'
+                        url: 'https://github.com/jeet-yadav27/Hotel_Churn.git',
+                        credentialsId: 'github-token'
                     ]]
                 )
             }
         }
 
-        stage('Set up Python virtual environment') {
+        stage('Set Up Python Environment') {
             steps {
-                sh """
-                    python3 -m venv ${VENV_DIR}
+                echo '🐍 Setting up virtual environment and installing dependencies...'
+                sh '''
+                    python -m venv ${VENV_DIR}
                     . ${VENV_DIR}/bin/activate
                     pip install --upgrade pip
                     pip install -e .
-                """
-            }
-        }
-
-        stage('Download Data from GCS') {
-            steps {
-                withCredentials([file(credentialsId: 'gcp-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
-                    sh '''
-                        gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
-                        gcloud config set project "$GCP_PROJECT"
-                        mkdir -p artifacts/raw
-                        gsutil cp gs://$BUCKET_NAME/$DATA_FILE artifacts/raw/raw.csv
-                    '''
-                }
-            }
-        }
-
-        stage('Run Data Ingestion (Split Train/Test)') {
-            steps {
-                sh """
-                    . ${VENV_DIR}/bin/activate
-                    python src/data_ingestion.py
-                """
+                '''
             }
         }
 
         stage('Build & Push Docker Image to GCR') {
             steps {
                 withCredentials([file(credentialsId: 'gcp-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                    echo '🐳 Building and pushing Docker image to GCR...'
                     sh '''
-                        gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
-                        gcloud config set project "$GCP_PROJECT"
+                        export PATH=$PATH:${GCLOUD_PATH}
+                        gcloud auth activate-service-account --key-file=${GOOGLE_APPLICATION_CREDENTIALS}
+                        gcloud config set project ${GCP_PROJECT}
                         gcloud auth configure-docker --quiet
 
-                        docker build -t gcr.io/$GCP_PROJECT/ml-project:latest .
-                        docker push gcr.io/$GCP_PROJECT/ml-project:latest
+                        docker build -t gcr.io/${GCP_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} .
+                        docker push gcr.io/${GCP_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
                     '''
                 }
             }
         }
+    }
 
-        stage('Run Full Training Pipeline in Container') {
-            steps {
-                withCredentials([file(credentialsId: 'gcp-key', variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
-                    sh '''
-                        gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS"
-                        gcloud config set project "$GCP_PROJECT"
-
-                        docker run --rm \
-                            -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/key.json \
-                            -v "$GOOGLE_APPLICATION_CREDENTIALS":/tmp/key.json:ro \
-                            -v "$PWD/artifacts":/app/artifacts \
-                            gcr.io/$GCP_PROJECT/ml-project:latest \
-                            python pipeline/training_pipeline.py
-                    '''
-                }
-            }
+    post {
+        success {
+            echo '✅ Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed. Check logs for details.'
         }
     }
 }

@@ -68,6 +68,7 @@ pipeline {
                             --platform managed \
                             --region ${REGION} \
                             --allow-unauthenticated
+                            --port 8080
                     '''
                 }
             }

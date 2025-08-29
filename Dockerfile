@@ -1,37 +1,33 @@
 # Use a lightweight Python image
-FROM python:slim
+FROM python:3.10-slim
 
-# Set environment variables to prevent Python from writing .pyc files & Ensure Python output is not buffered
+# Prevent Python from writing .pyc files & Ensure output is not buffered
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Install system dependencies required by LightGBM
+# Install system dependencies (required by LightGBM)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the application code
+# Copy requirements first (for better caching)
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the app code
 COPY . .
 
-# Install the package in editable mode
-RUN pip install --no-cache-dir -e .
+# Ensure trained model is copied (adjust path if needed)
+COPY artifacts/models/lgbm_model.pkl artifacts/models/lgbm_model.pkl
 
-# Train the model before running the application
-# RUN python pipeline/training_pipeline.py
-# Remove this line from Dockerfile
-# RUN python pipeline/training_pipeline.py 2>&1
-
-
-
-# Update CMD to run training before starting the app
-# CMD ["bash", "-c", "python pipeline/training_pipeline.py && python application.py"]
-
-# Expose the port that Flask will run on
+# Expose Cloud Run port
 EXPOSE 8080
 
-# Command to run the app
+# Start Flask app
 CMD ["python", "application.py"]
